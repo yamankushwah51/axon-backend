@@ -42,3 +42,35 @@ async def chat(prompt: str, user_gender: str = "male", is_serious: bool = False)
         return {"response": response.text}
     except Exception as e:
         return {"error": "Server issue, please try again!"}
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from google import genai
+import os
+
+app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+@app.post("/chat")
+async def chat(request: Request):
+    data = await request.json()
+    user_prompt = data.get("prompt")
+    # Language detection aur response logic ab Gemini natively handle karega
+    
+    instruction = """
+    You are AXON, a multi-lingual AI. 
+    - Respond in the language used by the user (Hindi, English, Tamil, Japanese, Hinglish, etc.).
+    - Keep the AXON personality: Honest, bold, and logical.
+    - No 'chaaplusi'. If the user is wrong, tell them politely but firmly.
+    """
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=user_prompt,
+            config={'system_instruction': instruction}
+        )
+        return {"response": response.text}
+    except Exception as e:
+        return {"error": str(e)}
