@@ -46,3 +46,38 @@ async def chat(request: Request):
         return {"response": response.text}
     except Exception as e:
         return {"error": str(e)}
+        from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import google.generativeai as genai
+import os
+
+app = FastAPI()
+
+# CORS allow karna zaroori hai taaki tumhara HTML baat kar sake
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Gemini Setup
+# Render ke Environment Variables mein 'GEMINI_API_KEY' naam se apni key daalna
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+class ChatRequest(BaseModel):
+    prompt: str
+
+@app.get("/")
+def home():
+    return {"status": "AXON Engine is Live"}
+
+@app.post("/chat")
+async def chat(request: ChatRequest):
+    try:
+        response = model.generate_content(request.prompt)
+        return {"response": response.text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
