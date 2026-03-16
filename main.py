@@ -50,3 +50,4 @@ async def chat(request: ChatRequest):
 @app.get("/")
 def home():
     return {"status": "AXON Engine is running on Light Speed"}
+    
