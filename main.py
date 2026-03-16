@@ -1,53 +1,27 @@
 import os
-import base64
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional 
 import google.generativeai as genai
+import gradio as gr
 
-app = FastAPI()
-
-# Frontend connection ke liye CORS bypass
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-API_KEY = os.environ.get("AIzaSyD9Z958n2KyjjMo9DZpP3toGmaAsUhJHuI")
+# API Key setup
+API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=API_KEY)
-
-
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-class ChatRequest(BaseModel):
-    prompt: str
-    image_data: Optional[str] = None  # Frontend se image base64 mein aayegi
-
-@app.post("/chat")
-async def chat(request: ChatRequest):
+def chat_function(message, history):
     try:
-        
-        instruction = "You are AXON, a high-level intellectual AI. Keep your tone bold and tech-savvy."
-        content = [instruction, request.prompt]
-        
-        
-        if request.image_data:
-            try:
-                img_bytes = base64.b64decode(request.image_data)
-                content.append({"mime_type": "image/jpeg", "data": img_bytes})
-            except:
-                pass # Agar image format galat hai toh skip karo
-        
-        response = model.generate_content(content)
-        return {"response": response.text}
+        instruction = "You are AXON, a high-level intellectual AI developed by Yaman. Be bold and logical."
+        response = model.generate_content([instruction, message])
+        return response.text
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return f"Error: Make sure GEMINI_API_KEY is set in Settings. ({str(e)})"
 
-@app.get("/")
-def home():
-    return {"status": "AXON Engine is running on Light Speed"}
-    
+# Ek sundar interface bana rahe hain
+demo = gr.ChatInterface(
+    fn=chat_function,
+    title="AXON CORE v2.0",
+    description="Developed by Yaman",
+    theme="soft"
+)
+
+if __name__ == "__main__":
+    demo.launch(server_name="0.0.0.0", server_port=7860)
